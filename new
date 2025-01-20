@@ -1,0 +1,516 @@
+const About = () => {
+    return (
+        <div style={{ textAlign: 'center', margin: '50px' }}>
+            <h1>About</h1>
+        </div>
+    );
+};
+export default About;
+
+import './App.css'
+import { RouterProvider } from 'react-router'
+import { router } from './Router'
+
+function App() {
+
+  return (
+    <>
+      <RouterProvider router={router} />     
+    </>
+  )
+}
+
+export default App
+
+
+import Avatar from "@mui/material/Avatar";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+
+const MyAvatar = ({ nameString }: { nameString: string }) => {
+    function stringToColor(string: string) {
+        let hash = 0;
+        let i;
+
+        for (i = 0; i < string.length; i += 1) {
+            hash = string.charCodeAt(i) + ((hash << 5) - hash);
+        }
+
+        let color = '#';
+
+        for (i = 0; i < 3; i += 1) {
+            const value = (hash >> (i * 8)) & 0xff;
+            color += `00${value.toString(16)}`.slice(-2);
+        }
+
+        return color;
+    }
+
+const ShowDetails = (nameString: string) => {
+    return(
+        <div>
+        <Tooltip title={nameString}>
+                <Avatar sx={{ bgcolor: stringToColor(nameString) }}> {nameString.split(' ').map(name => name[0]).join('')} </Avatar>
+        </Tooltip>
+        <Typography variant='inherit' 
+         color="black">Hello {nameString}</Typography>
+        </div>
+    )
+}
+
+
+    return (<>
+        {nameString != '' ? ShowDetails(nameString) : <Avatar src="/broken-image.jpg" />}    
+    </>)
+}
+export default MyAvatar;
+
+import { useContext, useState } from "react";
+import { UserContext } from "./userReducer";
+import SendIcon from '@mui/icons-material/Send';
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import Box from "@mui/material/Box";
+
+const Form = ({ handleSubmit }: { handleSubmit: Function }) => {
+
+    const { user } = useContext(UserContext);
+    const [userData, setUser] = useState({
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        mail: user.mail,
+        password: user.password,
+        address: user.address,
+        phone: user.phone
+    });
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setUser({
+            ...userData,
+            [name]: value
+        });
+    };
+
+    return (<>
+            <Box
+            component="form"
+            sx={{
+                border: '1px solid black',
+                position: 'fixed',
+                top: '15vh',
+                left: '40vw',
+                display: 'flex', 
+                flexDirection: 'column', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                height: '75vh', 
+                '& > :not(style)': { m: 1, width: '30ch' } }}
+            noValidate
+            autoComplete="off"
+            onSubmit={(e) => { handleSubmit(e, userData); }}>
+                
+                <TextField label="FirstName" variant="outlined"
+                    type='text' name="firstName" value={userData.firstName} onChange={handleChange} />
+                <TextField label="LastName" variant="outlined"
+                    type='text' name="lastName" value={userData.lastName} onChange={handleChange} />
+                <TextField label="Email" variant="outlined"
+                    type='email' name="mail" value={userData.mail} onChange={handleChange} />
+                <TextField label="Password" variant="outlined"
+                    type='password' name="password" value={userData.password} onChange={handleChange} />
+                <TextField label="Address" variant="outlined"
+                    type='text' name="address" value={userData.address} onChange={handleChange} />
+                <TextField label="Phone" variant="outlined"
+                    type='text' name="phone" value={userData.phone} onChange={handleChange} />
+                <Button type="submit" startIcon={<SendIcon />} sx={{ color: "black", borderColor: "black" }}>Send</Button>
+            </Box>
+    </>)
+}
+export default Form;
+
+const Home = () => {
+    return (
+        <div style={{ textAlign: 'center', margin: '50px' }}>
+            <h1>Home</h1>
+        </div>
+    )
+}
+export default Home;
+
+import { FormEvent, useContext, useRef, useState } from "react";
+import { UserContext } from "./userReducer";
+import axios from "axios";
+import Box from "@mui/material/Box";
+import TextField from "@mui/material/TextField";
+import Button from "@mui/material/Button";
+import SendIcon from '@mui/icons-material/Send';
+import { IsLogin, URL } from "./userDetails";
+import Dialog from "@mui/material/Dialog";
+
+
+const Login = () => {
+    const [, setIsLogin] = useContext(IsLogin);
+    const { user, userDispatch } = useContext(UserContext);
+    const emailRef = useRef<HTMLInputElement>(null)
+    const passRef = useRef<HTMLInputElement>(null)
+    const currentURL = URL + user.status === 'signUp' ? '/register' : '/login';
+
+
+        const [open, setOpen] = useState(false); // Use state to manage dialog open/close
+        const selectedValue: string = '';
+        
+        const onClose = (value: string) => {
+            setOpen(false); // Close the dialog
+        };
+let res;
+    const handleSubmit = async (e: FormEvent) => {
+        e.preventDefault();
+        try {
+            {user.status === 'signUp' ?
+            res = await axios.post(currentURL,{
+                email: emailRef.current?.value,
+                password: passRef.current?.value
+            })
+               
+            : res = await axios.post(currentURL, {
+                    email: emailRef.current?.value,
+                    password: passRef.current?.value
+                },
+                { headers: { 'user-id': '' + user.id } })}
+            userDispatch({
+                type: 'LOGIN_USER',
+                data: {
+                    id: res.data.user.id,
+                    mail: emailRef.current!.value,
+                    password: passRef.current!.value,
+                }
+            })
+
+            setIsLogin(true);
+
+        } catch (e: any) {
+            if (e.status === 403)
+                alert('Invalid credentials')
+            if (e.status === 422)
+                alert('user already sign up')
+        }
+
+        emailRef.current!.value = ''
+        passRef.current!.value = ''
+    }
+    const handleClose = () => {
+        onClose(selectedValue);
+    };
+    return (<>
+        <Dialog onClose={handleClose} open={open}>
+
+            <Box
+                component="form"
+                sx={{
+                    border: '1px solid black',
+                    position: 'fixed',
+                    top: '20vh',
+                    left: '40vw',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    '& > :not(style)': { m: 2, width: '30ch' }
+                }}
+                noValidate
+                autoComplete="off"
+                onSubmit={handleSubmit}>
+                <TextField label="Email" variant="outlined"
+                    type='email' name="email" inputRef={emailRef} />
+                <TextField label="Password" variant="outlined"
+                    type='password' name="password" inputRef={passRef} />
+                <Button type="submit" startIcon={<SendIcon />} sx={{ color: "black", borderColor: "black" }}>Send</Button>
+            </Box>
+        </Dialog>
+        <Button onClick={() => setOpen(true)}>Login User</Button>
+
+    </>)
+}
+export default Login;
+
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import './index.css'
+import App from './App.tsx'
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+)
+
+
+import { Link, matchPath, useLocation } from "react-router";
+import Box from '@mui/material/Box';
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
+
+
+function useRouteMatch(patterns: readonly string[]) {
+    const { pathname } = useLocation();
+
+    for (let i = 0; i < patterns.length; i += 1) {
+        const pattern = patterns[i];
+        const possibleMatch = matchPath(pattern, pathname);
+        if (possibleMatch !== null) {
+            return possibleMatch;
+        }
+    }
+
+    return null;
+}
+
+function MyTabs() {
+    const routeMatch = useRouteMatch(['/', '/about']);
+    const currentTab = routeMatch?.pattern?.path;
+
+    return (
+        <Tabs value={currentTab} TabIndicatorProps={{ sx: { background: 'deeppink' } }} textColor="primary">
+            <Tab label="Home" value="/" to="/" component={Link} style={{ color: currentTab === '/' ? 'deeppink' : 'black' }} />
+            <Tab label="About" value="/about" to="/about" component={Link} style={{ color: currentTab === '/about' ? 'deeppink' : 'black' }} />
+        </Tabs>
+    );
+}
+
+const NavBar = () => {
+    return (<>
+        <Box sx={{ width: '100%' }}>
+            <MyTabs />
+        </Box>
+    </>)
+}
+
+export default NavBar;
+
+import { createBrowserRouter } from 'react-router';
+import About from './component/pages/About';
+import Home from './component/pages/Home';
+import UserDetails from './component/userDetails';
+
+export const router = createBrowserRouter([
+    {
+        path: '/', element: <UserDetails />,
+        errorElement: <h1>error</h1>,
+        children: [
+            { path: '/', element: <Home /> },
+            { path: 'about', element: <About /> }
+        ]
+    }
+])
+
+import { FormEvent, useContext, useState } from "react";
+import { UserContext, UserType } from "./userReducer";
+import Form from "./form";
+import axios from "axios";
+import { URL } from "./userDetails";
+import Dialog from "@mui/material/Dialog";
+import Button from "@mui/material/Button";
+
+const UpdateUser = () => {
+    const { user, userDispatch } = useContext(UserContext);
+    const [open, setOpen] = useState(false); // Use state to manage dialog open/close
+    const selectedValue: string = '';
+    
+    const onClose = (value: string) => {
+        setOpen(false); // Close the dialog
+    };
+    const handleSubmit = async (e: FormEvent, user1: UserType) => {
+        e.preventDefault();
+        try {
+            const res = await axios.put(
+                URL, {
+                firstName: user1.firstName,
+                lastName: user1.lastName,
+                mail: user1.mail,
+                password: user1.password,
+                address: user1.address,
+                phone: user1.phone
+            },
+                { headers: { 'user-id': '' + user.id } }
+            )
+
+            userDispatch({
+                type: 'UPDATE_USER',
+                data: res.data
+            })
+            // setIsUpdate(false);
+
+        } catch (error: any) {
+            if (error.status === 404) {
+                alert('user not found')
+            }
+            else if (error.status === 403) {
+                alert('Unauthorized')
+            }
+        }
+    }
+    const handleClose = () => {
+        onClose(selectedValue);
+      };
+    return (<>
+        <Dialog onClose={handleClose} open={open}>
+
+            <Form handleSubmit={handleSubmit}></Form>
+        </Dialog>
+        <Button onClick={() => setOpen(true)}>Update User</Button>
+    </>)
+}
+export default UpdateUser;
+
+
+import { createContext, Dispatch, useState } from "react"
+import UpdateUser from "./updateUser"
+import AppBar from '@mui/material/AppBar';
+import Box from '@mui/material/Box';
+import Toolbar from '@mui/material/Toolbar';
+import Container from '@mui/material/Container';
+import Login from "./login";
+import Button from "@mui/material/Button";
+import LoginIcon from '@mui/icons-material/Login';
+import EditIcon from '@mui/icons-material/Edit';
+import AppRegistrationIcon from '@mui/icons-material/AppRegistration';
+import { Outlet } from "react-router";
+import NavBar from "./NavBar";
+import { useReducer } from "react";
+import userReducer, { UserContext, UserType } from "./userReducer";
+import MyAvatar from "./Avatar&Name";
+
+export const IsLogin = createContext<[boolean, Dispatch<React.SetStateAction<boolean>>]>([false, () => null])
+export const URL = 'http://localhost:3000/api/user';
+
+const UserDetails = () => {
+
+    const [showUpdate, setShowUpdate] = useState(false)
+    const [isLogin, setIsLogin] = useState(false)
+    const [showLogin, setShowLogin] = useState(false)
+
+    const initialUser: UserType = { id: 0, firstName: '', lastName: '', mail: '', password: '', address: '', phone: '', status: 'signUp' };
+    const [user, userDispatch] = useReducer(userReducer, initialUser);
+
+    function OpenLogin(){
+        return <Login/>
+    }
+    const OpenUpdate=()=>{
+       return <UpdateUser/>
+    }
+
+    return (<>
+        <IsLogin.Provider value={[isLogin, setIsLogin]}>
+            <UserContext.Provider value={{ user, userDispatch }}>
+                <Box sx={{ display: 'flex' }}>
+                    <AppBar position="fixed" sx={{ backgroundColor: 'rgba(222, 197, 197, 0.52)' }}>
+                        <Container maxWidth="xl">
+                            <Toolbar disableGutters style={{ display: 'flex' }}>
+                                <Box sx={{ flexGrow: 0.01 }}>
+                                    {/* show avatar */}
+                                    {(user.firstName === '' && user.lastName === '') ? <MyAvatar nameString={''} /> :
+                                        <MyAvatar nameString={user.firstName + ' ' + user.lastName} />}
+                                </Box>
+                                {(user.status === 'signUp' || user.status === 'logIn') && <Box sx={{ flexGrow: 0.01 }}>
+                                    {/* <Button sx={{ color: "black", borderColor: "black", margin: '1vh' }} variant="outlined" startIcon={<AppRegistrationIcon />}
+                                        onClick={() => setShowLogin(true)}>sign up
+                                    </Button> */}
+                                    {/* <Button sx={{ color: "black", borderColor: "black" }} variant="outlined" startIcon={<LoginIcon />}
+                                        onClick={() =>setShowLogin(true)}>Log in
+                                    </Button> */}
+                                    <Login/>
+                                </Box>}
+                                
+                                {user.status === 'update' && <Box sx={{ flexGrow: 0.01 }}>
+                                    {/* <Button sx={{ color: "black", borderColor: "black" }} variant="outlined" startIcon={<EditIcon />}
+                                        onClick={() =>{setShowUpdate(true), setShowLogin(false)}}>edit</Button> */}
+                                <UpdateUser/>
+                                </Box>}
+                                {/* {showLogin && <Login />} */}
+                                {/* {showUpdate && <UpdateUser />} */}
+                                {/* log in button */}
+                                {/* {!isLogin && <Box sx={{ flexGrow: 0.01 }}>
+                                    <Button sx={{ color: "black", borderColor: "black", margin: '1vh' }} variant="outlined" startIcon={<AppRegistrationIcon />}
+                                        onClick={() => { setShowRegister(false) }}>sign up
+                                    </Button> */}
+                                {/* {!isLogin && !showRegister && <Register />} */}
+
+                                {/* <Button sx={{ color: "black", borderColor: "black" }} variant="outlined" startIcon={<LoginIcon />}
+                                        onClick={() => { setShowLogin(false) }}>Log in
+                                    </Button>
+                                    {!isLogin && !showLogin && <Login />}
+                                </Box>} */}
+
+                                {/* update button */}
+                                {/* {isLogin && (!showLogin || !showRegister) && <Box sx={{ flexGrow: 0.01 }}>
+                                    <Button sx={{ color: "black", borderColor: "black" }} variant="outlined" startIcon={<EditIcon />}
+                                        onClick={() => setIsUpdate(true)}>edit</Button>
+                                    {isLogin && (!showLogin || !showRegister) && isUpdate && <UpdateUser setIsUpdate={setIsUpdate} />}
+                                </Box>} */}
+                                <Box sx={{ right: 0, position: 'absolute' }}>
+                                    <NavBar />
+                                </Box>
+                            </Toolbar>
+                        </Container>
+                    </AppBar>
+                    <Outlet />
+                </Box>
+            </UserContext.Provider>
+        </IsLogin.Provider>
+    </>)
+}
+export default UserDetails
+
+
+
+import { createContext, Dispatch } from "react"
+
+type Status = 'signUp' | 'logIn' | 'update';
+
+export type UserType = {
+    id: number,
+    firstName: string,
+    lastName: string,
+    mail: string,
+    password: string,
+    address: string,
+    phone: string,
+    status: Status
+}
+
+export type PartialUserType = {
+    id: number,
+    mail: string,
+    password: string
+}
+
+type Action = {
+    type: 'LOGIN_USER',
+    data: PartialUserType
+} | {
+    type: 'UPDATE_USER',
+    data: Partial<UserType>,
+} | {
+    type: 'DELETE_USER' | 'GET_USER'
+}
+
+export const UserContext = createContext<{
+    user: Partial<UserType>;
+    userDispatch: Dispatch<Action>;
+}>({
+    user: { id: 0, firstName: '', lastName: '', mail: '', password: '', address: '', phone: '', status: 'signUp' },
+    userDispatch: () => null
+})
+
+export default (state: UserType, action: Action): UserType => {
+    switch (action.type) {
+        case 'LOGIN_USER':
+            return { ...state, ...action.data, status: 'logIn' };
+        case 'UPDATE_USER':
+            return { ...state, ...action.data ,status:'update'};
+        default:
+            return state;
+    }
+}
+

@@ -1,14 +1,13 @@
 import './App.css'
-import User from './component/user'
-
+import { RouterProvider } from 'react-router'
+import { router } from './Router'
 
 function App() {
 
   return (
     <>
-      <User/>
+      <RouterProvider router={router} />     
     </>
-
   )
 }
 
