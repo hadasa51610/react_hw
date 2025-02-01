@@ -1,7 +1,7 @@
 import { createBrowserRouter } from 'react-router';
-import About from './component/pages/About';
-import Home from './component/pages/Home';
-import UserDetails from './component/userDetails';
+import Home from './component/Home';
+import UserDetails from './component/UserDetails';
+import RecipeContainer from './component/RecipeContainer';
 
 export const router = createBrowserRouter([
     {
@@ -9,7 +9,11 @@ export const router = createBrowserRouter([
         errorElement: <h1>error</h1>,
         children: [
             { path: '/', element: <Home /> },
-            { path: 'about', element: <About /> }
+            {
+                path: 'recipe', element: <RecipeContainer />, children: [
+                    { path: 'recipe/:id', element: '' }
+                ]
+            }
         ]
     }
 ])

@@ -1,20 +1,15 @@
 import { FormEvent, useContext, useRef, useState } from "react";
 import { UserContext } from "./UserReducer";
-import axios from "axios";
-import Box from "@mui/material/Box";
-import TextField from "@mui/material/TextField";
-import Button from "@mui/material/Button";
+import axios, { AxiosError } from "axios";
+import { Box, TextField, Button, Modal, Paper, Typography } from "@mui/material";
 import SendIcon from '@mui/icons-material/Send';
-import { IsLogin, URL } from "./userDetails";
-import Modal from "@mui/material/Modal";
+import { IsLogin, URL } from "./UserDetails";
 import LoginIcon from '@mui/icons-material/Login';
 import AppRegistrationIcon from '@mui/icons-material/AppRegistration';
-import Paper from "@mui/material/Paper";
-import Typography from "@mui/material/Typography";
 
 const Login = () => {
     const [, setIsLogin] = useContext(IsLogin);
-    const { user, userDispatch } = useContext(UserContext);
+    const { userDispatch } = useContext(UserContext);
     const emailRef = useRef<HTMLInputElement>(null)
     const passRef = useRef<HTMLInputElement>(null)
     const [open, setOpen] = useState(false);
@@ -35,17 +30,20 @@ const Login = () => {
 
             userDispatch({
                 type: 'LOGIN_USER',
-                data: {
-                    id: res.data.user.id,
-                    mail: res.data.user.email,
-                    password: res.data.user.password
+                data: click === "login" ? {
+                    ...res.data.user
+                } : {
+                    id: res.data.userId,
+                    email: emailRef.current?.value,
+                    password: passRef.current?.value
                 }
             })
             setIsLogin(true);
             handleClose();
 
-        } catch (e: any) {
+        } catch (e: AxiosError | any) {
             if (e.response?.status === 403) alert('Invalid credentials');
+            if (e.response?.status === 401) alert('Invalid credentials');
             if (e.response?.status === 422) alert('User already signed up');
         }
     }
@@ -72,20 +70,19 @@ const Login = () => {
                     borderRadius: 2,
                     '& > :not(style)': { m: 2, width: '30ch' }
                 }}>
-                <Typography variant="h6" component="h2" sx={{ mb: 2 ,textAlign:'center',fontWeight:'bold'}}>
+                <Typography variant="h6" component="h2" sx={{ mb: 2, textAlign: 'center', fontWeight: 'bold' }}>
                     {click === "login" ? "Login" : "Register"}
                 </Typography>
                 <Box
                     component="form"
                     noValidate
                     autoComplete="off"
-                    onSubmit={handleSubmit}
                     sx={{ width: '100%' }}>
                     <TextField label="Email" variant="outlined"
-                        type='email' name="email" inputRef={emailRef} fullWidth sx={{ mb: 2 }}/>
+                        type='email' name="email" inputRef={emailRef} fullWidth sx={{ mb: 2 }} />
                     <TextField label="Password" variant="outlined"
-                        type='password' name="password" inputRef={passRef} fullWidth sx={{ mb: 2 }}/>
-                    <Button type="submit" startIcon={<SendIcon />} variant="contained" sx={{ width: '100%' }}>Send</Button>
+                        type='password' name="password" inputRef={passRef} fullWidth sx={{ mb: 2 }} />
+                    <Button type="submit" startIcon={<SendIcon />} variant="contained" sx={{ width: '100%', background: '#ae7a6f' }} onClick={(e) => handleSubmit(e)}>Send</Button>
                 </Box>
             </Box>
         </Modal>

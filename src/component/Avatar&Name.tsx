@@ -1,6 +1,4 @@
-import Avatar from "@mui/material/Avatar";
-import Tooltip from "@mui/material/Tooltip";
-import Typography from "@mui/material/Typography";
+import { Avatar, Tooltip, Typography } from "@mui/material";
 
 const MyAvatar = ({ nameString }: { nameString: string }) => {
     function stringToColor(string: string) {
@@ -21,21 +19,20 @@ const MyAvatar = ({ nameString }: { nameString: string }) => {
         return color;
     }
 
-const ShowDetails = (nameString: string) => {
-    return(
-        <div>
-        <Tooltip title={nameString}>
-                <Avatar sx={{ bgcolor: stringToColor(nameString) }}> {nameString.split(' ').map(name => name[0]).join('')} </Avatar>
-        </Tooltip>
-        <Typography variant='inherit' 
-         color="black">Hello {nameString}</Typography>
-        </div>
-    )
-}
-
+    const ShowDetails = (nameString: string) => {
+        return (
+            <div>
+                <Tooltip title={nameString}>
+                    <Avatar sx={{ bgcolor: stringToColor(nameString) }}> {nameString.split(' ').map(name => name[0]).join('')} </Avatar>
+                </Tooltip>
+                <Typography variant='inherit'
+                    color="black">Hello {nameString}</Typography>
+            </div>
+        )
+    }
 
     return (<>
-        {nameString != '' ? ShowDetails(nameString) : <Avatar src="/broken-image.jpg" />}    
+        {nameString != '' ? ShowDetails(nameString) : <Avatar src="/broken-image.jpg" />}
     </>)
 }
 export default MyAvatar;

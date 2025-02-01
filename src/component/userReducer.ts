@@ -4,7 +4,7 @@ export type UserType = {
     id: number,
     firstName: string,
     lastName: string,
-    mail: string,
+    email: string,
     password: string,
     address: string,
     phone: string
@@ -12,7 +12,7 @@ export type UserType = {
 
 export type PartialUserType = {
     id: number,
-    mail: string,
+    email: string,
     password: string
 }
 
@@ -23,14 +23,14 @@ type Action = {
     type: 'UPDATE_USER',
     data: Partial<UserType>,
 } | {
-    type: 'DELETE_USER' | 'GET_USER'
+    type: 'DELETE_USER' | 'GET_USER' 
 }
 
 export const UserContext = createContext<{
     user: Partial<UserType>;
     userDispatch: Dispatch<Action>;
 }>({
-    user: { id: 0, firstName: '', lastName: '', mail: '', password: '', address: '', phone: ''},
+    user: { id: 0, firstName: '', lastName: '', email: '', password: '', address: '', phone: ''},
     userDispatch: () => null
 })
 
