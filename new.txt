@@ -1,0 +1,696 @@
+import { array, object, string } from "yup"
+import { useContext, useState } from "react"
+import { SubmitHandler, useForm } from "react-hook-form"
+import { yupResolver } from "@hookform/resolvers/yup"
+import { addRecipe, Recipe } from "../store/recipesSlice";
+import { useDispatch } from "react-redux";
+import { UserContext } from "./UserReducer";
+import { Button, Modal, TextField, Box, Typography } from "@mui/material";
+import AddIcon from '@mui/icons-material/Add';
+import { RecipeDispatch } from "../store/store";
+
+const schema = object().shape({
+    title: string().required("Title is required"),
+    description: string().required("Description is required"),
+    ingredients: array().required(),
+    instructions: string().required("Instructions are required")
+}).required()
+
+const AddRecipe = () => {
+    const [open, setOpen] = useState(false);
+    const dispatch = useDispatch<RecipeDispatch>();
+    const { user } = useContext(UserContext);
+    const { register, handleSubmit, formState: { errors }, reset } = useForm({ resolver: yupResolver(schema) });
+
+    const onSubmit: SubmitHandler<Recipe> = (recipe) => {
+        recipe.authorId = user.id;
+        dispatch(addRecipe(recipe));
+        reset()
+        setOpen(false);
+    }
+    
+    return (<>
+        <Button sx={{ color: "black", borderColor: "black", margin:'10px' }} variant="outlined" onClick={() => setOpen(true)} startIcon={<AddIcon />}>Add Recipe</Button>
+
+        <Modal open={open} onClose={() => setOpen(false)}>
+            <Box
+                component="form"
+                onSubmit={handleSubmit(onSubmit)}
+                sx={{
+                    width: 400,
+                    bgcolor: 'background.paper',
+                    p: 4,
+                    borderRadius: 2,
+                    boxShadow: 24,
+                    mx: 'auto',
+                    mt: '8%',
+                }}>
+                <Typography variant="h6" align="center" gutterBottom>Add New Recipe</Typography>
+                <TextField
+                    {...register("title")}
+                    label="Title"
+                    variant="outlined"
+                    fullWidth
+                    margin="normal"
+                    error={!!errors.title}
+                    helperText={errors.title?.message}
+                />
+                <TextField
+                    {...register("description")}
+                    label="Description"
+                    variant="outlined"
+                    fullWidth
+                    margin="normal"
+                    error={!!errors.description}
+                    helperText={errors.description?.message}
+                />
+                <TextField
+                    {...register("ingredients")}
+                    label="Ingredients (comma-separated)"
+                    variant="outlined"
+                    fullWidth
+                    margin="normal"
+                    error={!!errors.ingredients}
+                    helperText={errors.ingredients?.message}
+                />
+                <TextField
+                    {...register("instructions")}
+                    label="Instructions"
+                    variant="outlined"
+                    fullWidth
+                    margin="normal"
+                    error={!!errors.instructions}
+                    helperText={errors.instructions?.message}
+                />
+                <Button type="submit" variant="contained" fullWidth sx={{ mt: 2, background: '#ae7a6f' }}>Send</Button>
+            </Box>
+        </Modal>
+    </>)
+}
+export default AddRecipe;
+import './App.css'
+import { RouterProvider } from 'react-router'
+import { router } from './Router'
+import store from './store/store'
+import { Provider } from 'react-redux'
+
+function App() {
+
+  return (
+    <>
+      <Provider store={store}>
+        <RouterProvider router={router} />
+      </Provider>
+    </>
+  )
+}
+
+export default App
+
+import { Avatar, Tooltip, Typography } from "@mui/material";
+
+const MyAvatar = ({ nameString }: { nameString: string }) => {
+    function stringToColor(string: string) {
+        let hash = 0;
+        let i;
+
+        for (i = 0; i < string.length; i += 1) {
+            hash = string.charCodeAt(i) + ((hash << 5) - hash);
+        }
+
+        let color = '#';
+
+        for (i = 0; i < 3; i += 1) {
+            const value = (hash >> (i * 8)) & 0xff;
+            color += `00${value.toString(16)}`.slice(-2);
+        }
+
+        return color;
+    }
+
+    const ShowDetails = (nameString: string) => {
+        return (
+            <div>
+                <Tooltip title={nameString}>
+                    <Avatar sx={{ bgcolor: stringToColor(nameString) }}> {nameString.split(' ').map(name => name[0]).join('')} </Avatar>
+                </Tooltip>
+                <Typography variant='inherit'
+                    color="black">Hello {nameString}</Typography>
+            </div>
+        )
+    }
+
+    return (<>
+        {nameString != '' ? ShowDetails(nameString) : <Avatar src="/broken-image.jpg" />}
+    </>)
+}
+export default MyAvatar;
+import { useContext, useState } from "react";
+import { UserContext, UserType } from "./UserReducer";
+import SendIcon from '@mui/icons-material/Send';
+import { Button, TextField, Box, Typography } from "@mui/material";
+
+const Form = ({ handleSubmit }: { handleSubmit: Function }) => {
+
+    const { user } = useContext(UserContext);
+    const [userData, setUser] = useState<UserType>({
+        id: user?.id || 0,
+        firstName: user?.firstName || "",
+        lastName: user?.lastName || "",
+        email: user?.email || "",
+        password: user?.password || "",
+        address: user?.address || "",
+        phone: user?.phone || ""
+    });
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setUser({
+            ...userData,
+            [name]: value
+        });
+    };
+
+    return (<>
+        <Box
+            component="form"
+            sx={{
+                position: 'absolute',
+                top: '15%',
+                left: '40%',
+                transform: 'translateX(-50%,-50%)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                p: 3,
+                boxShadow: 24,
+                bgcolor: 'background.paper',
+                borderRadius: 3,
+                '& > :not(style)': { m: 1, width: '100%' }
+            }}
+
+            noValidate
+            autoComplete="off"
+        >
+            <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
+                Update Your Information
+            </Typography>
+            <TextField label="First Name" variant="outlined"
+                type='text' name="firstName" value={userData.firstName} onChange={handleChange} />
+            <TextField label="Last Name" variant="outlined"
+                type='text' name="lastName" value={userData.lastName} onChange={handleChange} />
+            <TextField label="Email" variant="outlined"
+                type='email' name="mail" value={userData.email} onChange={handleChange} />
+            <TextField label="Password" variant="outlined"
+                type='password' name="password" value={userData.password} onChange={handleChange} />
+            <TextField label="Address" variant="outlined"
+                type='text' name="address" value={userData.address} onChange={handleChange} />
+            <TextField label="Phone" variant="outlined"
+                type='text' name="phone" value={userData.phone} onChange={handleChange} />
+            <Button type="submit" startIcon={<SendIcon />} variant="contained" sx={{ mt: 2, bgcolor: '#ae7a6f', '&:hover': { bgcolor: 'primary.dark' } }}
+                onClick={(e) => { handleSubmit(e, userData); }}>Send</Button>
+        </Box>
+    </>)
+}
+export default Form;
+import { Container, Typography, Box } from "@mui/material";
+
+const Home = () => {
+    return (
+        <Container maxWidth="sm" sx={{ textAlign: 'center', mt: 8 }}>
+            <Box sx={{ bgcolor: '#fdf4f2', p: 4, borderRadius: 2, boxShadow: 3 }}>
+                <Typography variant="h2" component="h1">
+                    Home
+                </Typography>
+            </Box>
+        </Container>
+    )
+}
+export default Home;
+import { FormEvent, useContext, useRef, useState } from "react";
+import { UserContext } from "./UserReducer";
+import axios, { AxiosError } from "axios";
+import { Box, TextField, Button, Modal, Paper, Typography } from "@mui/material";
+import SendIcon from '@mui/icons-material/Send';
+import { IsLogin, URL } from "./UserDetails";
+import LoginIcon from '@mui/icons-material/Login';
+import AppRegistrationIcon from '@mui/icons-material/AppRegistration';
+
+const Login = () => {
+    const [, setIsLogin] = useContext(IsLogin);
+    const { userDispatch } = useContext(UserContext);
+    const emailRef = useRef<HTMLInputElement>(null)
+    const passRef = useRef<HTMLInputElement>(null)
+    const [open, setOpen] = useState(false);
+    const [click, setClick] = useState("")
+    const handleOpenLogin = () => { setClick("login"); setOpen(true); }
+    const handleOpenRegister = () => { setClick("register"); setOpen(true); }
+    const handleClose = () => setOpen(false);
+
+    const handleSubmit = async (e: FormEvent) => {
+        e.preventDefault();
+
+        try {
+            const res = await axios.post(`${URL}/${click}`,
+                {
+                    email: emailRef.current?.value,
+                    password: passRef.current?.value
+                })
+
+            userDispatch({
+                type: 'LOGIN_USER',
+                data: click === "login" ? {
+                    ...res.data.user
+                } : {
+                    id: res.data.userId,
+                    email: emailRef.current?.value,
+                    password: passRef.current?.value
+                }
+            })
+            setIsLogin(true);
+            handleClose();
+
+        } catch (e: AxiosError | any) {
+            if (e.response?.status === 403) alert('Invalid credentials');
+            if (e.response?.status === 401) alert('Invalid credentials');
+            if (e.response?.status === 422) alert('User already signed up');
+        }
+    }
+
+    return (<>
+        <Button onClick={handleOpenRegister} sx={{ color: "black" }} startIcon={<AppRegistrationIcon />}>sign up</Button>
+        <span style={{ color: "black", margin: "1vh", fontSize: "3vh", fontWeight: 'bold' }}>|</span>
+        <Button onClick={handleOpenLogin} sx={{ color: "black" }} startIcon={<LoginIcon />}>sign in</Button>
+        <Modal open={open} onClose={handleClose} >
+            <Box
+                component={Paper}
+                sx={{
+                    border: '1px solid black',
+                    position: 'fixed',
+                    top: '20vh',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    p: 4,
+                    boxShadow: 24,
+                    borderRadius: 2,
+                    '& > :not(style)': { m: 2, width: '30ch' }
+                }}>
+                <Typography variant="h6" component="h2" sx={{ mb: 2, textAlign: 'center', fontWeight: 'bold' }}>
+                    {click === "login" ? "Login" : "Register"}
+                </Typography>
+                <Box
+                    component="form"
+                    noValidate
+                    autoComplete="off"
+                    sx={{ width: '100%' }}>
+                    <TextField label="Email" variant="outlined"
+                        type='email' name="email" inputRef={emailRef} fullWidth sx={{ mb: 2 }} />
+                    <TextField label="Password" variant="outlined"
+                        type='password' name="password" inputRef={passRef} fullWidth sx={{ mb: 2 }} />
+                    <Button type="submit" startIcon={<SendIcon />} variant="contained" sx={{ width: '100%', background: '#ae7a6f' }} onClick={(e) => handleSubmit(e)}>Send</Button>
+                </Box>
+            </Box>
+        </Modal>
+    </>)
+}
+export default Login;
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import './index.css'
+import App from './App.tsx'
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+)
+
+import { Link, matchPath, useLocation } from "react-router";
+import { Box, Tabs, Tab } from '@mui/material';
+
+function useRouteMatch(patterns: readonly string[]) {
+    const { pathname } = useLocation();
+
+    for (let i = 0; i < patterns.length; i += 1) {
+        const pattern = patterns[i];
+        const possibleMatch = matchPath(pattern, pathname);
+        if (possibleMatch !== null) {
+            return possibleMatch;
+        }
+    }
+    return null;
+}
+
+function MyTabs() {
+    const routeMatch = useRouteMatch(['/', '/recipe']);
+    const currentTab = routeMatch?.pattern?.path;
+    const styleHome = currentTab === '/' ? 'deeppink' : 'black';
+    const styleRecipe = currentTab != '/' ? 'deeppink' : 'black';
+    return (
+        <Tabs value={currentTab} TabIndicatorProps={{ sx: { background: 'deeppink' } }} textColor="primary">
+            <Tab label="Home" value="/" to="/" component={Link} style={{ color: styleHome }} />
+            <Tab label="recipes" value="/recipe" to="recipe?:id" component={Link} style={{ color: styleRecipe }} />
+        </Tabs>
+    );
+}
+
+const NavBar = () => {
+    return (<>
+        <Box sx={{ width: '100%' }}>
+            <MyTabs />
+        </Box>
+    </>)
+}
+
+export default NavBar;
+import Grid from '@mui/material/Grid2';
+import ShowRecipe from './ShowRecipe';
+import RecipesList from './RecipeList';
+import { useParams } from 'react-router-dom';
+
+const RecipeContainer = () => {
+    const { id } = useParams();
+    return (
+        <Grid container direction="row" spacing={2} sx={{
+            justifyContent: "flex-start",
+            alignItems: "center",
+          }}>
+            <Grid size={4}> 
+                <RecipesList />
+            </Grid>
+            <Grid size={8}>
+            {id && <ShowRecipe />} 
+            </Grid>
+        </Grid>
+    );
+};
+
+export default RecipeContainer;
+import { useDispatch, useSelector } from 'react-redux'
+import { fetchData, Recipe } from '../store/recipesSlice';
+import { RecipeDispatch, StoreType } from '../store/store';
+import { useEffect } from 'react';
+import { Link, Outlet } from 'react-router-dom';
+import { Container, Typography, List, ListItem, ListItemText, Paper } from '@mui/material';
+
+
+const RecipesList = () => {
+    const { recipes: { list: recipesList } } = useSelector((store: StoreType) => store);
+    const dispatch = useDispatch<RecipeDispatch>();
+    useEffect(() => {
+        dispatch(fetchData())
+    }, [])
+    return (
+        <>
+            <Container maxWidth="md" sx={{ mt: 4 }}>
+                <Typography variant="h4" align="center" gutterBottom>
+                    Recipes
+                </Typography>
+                <Paper elevation={3}>
+                    <List>
+                        {recipesList.map((recipe: Recipe) => (
+                            <ListItem component={Link} to={`/recipe/recipe/${recipe.id}`} key={recipe.id}>
+                                <ListItemText primary={recipe.title} secondary={recipe.description} />
+                            </ListItem>
+                        ))}
+                    </List>
+                </Paper>
+                <Outlet />
+            </Container>
+        </>
+    );
+};
+export default RecipesList;
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import axios, { AxiosError } from "axios";
+
+export type Recipe = {
+    id?: number,
+    title: string,
+    description: string,
+    ingredients: string[],
+    instructions: string,
+    authorId?: number
+}
+export const fetchData = createAsyncThunk<Recipe[], void>('recipes/fetch',
+    async (_, thunkAPI) => {
+        try {
+            const response = await axios.get<Recipe[]>('http://localhost:3000/api/recipes')
+            return response.data
+        }
+        catch (e: AxiosError | any) {
+            return thunkAPI.rejectWithValue(e.message)
+        }
+    }
+)
+export const addRecipe = createAsyncThunk('recipes/add',
+    async (recipe: Recipe, thunkAPI) => {
+        try {
+            const response = await axios.post('http://localhost:3000/api/recipes', {
+                title: recipe.title,
+                description: recipe.description,
+                ingredients: [...recipe.ingredients],
+                instructions: recipe.instructions
+            }, { headers: { 'user-id': '' + recipe.authorId } })
+            return response.data.recipe
+        }
+        catch (e: AxiosError | any) {
+            return thunkAPI.rejectWithValue(e.message)
+        }
+    }
+)
+const recipesSlice = createSlice({
+    name: 'recipes',
+    initialState: { list: [] as Recipe[], loading: true },
+    reducers: {},
+    extraReducers: (builder) => {
+        builder.addCase(fetchData.fulfilled,
+            (state, action) => {
+                console.log('fulfilled');
+                state.list = [...action.payload];
+            }
+        ).addCase(fetchData.rejected, () => {
+            console.log('failed get');
+        }
+        ).addCase(addRecipe.fulfilled,
+            (state, action) => {
+                console.log('fulfilled');
+                state.list = [...state.list, action.payload]
+            }
+        ).addCase(addRecipe.rejected, () => {
+            console.log('failed add');
+        }
+        )
+    },
+})
+export default recipesSlice;
+import { createBrowserRouter } from 'react-router';
+import Home from './component/Home';
+import UserDetails from './component/UserDetails';
+import RecipeContainer from './component/RecipeContainer';
+
+export const router = createBrowserRouter([
+    {
+        path: '/', element: <UserDetails />,
+        errorElement: <h1>error</h1>,
+        children: [
+            { path: '/', element: <Home /> },
+            {
+                path: 'recipe', element: <RecipeContainer />, children: [
+                    { path: 'recipe/:id', element: '' }
+                ]
+            }
+        ]
+    }
+])
+import { useDispatch, useSelector } from "react-redux";
+import { useParams } from "react-router-dom";
+import { RecipeDispatch, StoreType } from "../store/store";
+import { useEffect } from "react";
+import { fetchData } from "../store/recipesSlice";
+import { Container, Typography, Card, CardContent } from "@mui/material";
+
+const ShowRecipe = () => {
+    const { id } = useParams();
+    const { recipes: { list: recipesList } } = useSelector((store: StoreType) => store);
+    const dispatch = useDispatch<RecipeDispatch>();
+    useEffect(() => {
+        dispatch(fetchData())
+    }, [])
+    const recipe = recipesList.find(r => r.id === Number(id))
+    return (<>
+        <Container maxWidth="sm" sx={{ mt: 8 }}>
+            <Card variant="outlined" sx={{ borderRadius: 2, boxShadow: 3 }}>
+                <CardContent>
+                    <Typography variant="h4" component="h1" gutterBottom>
+                        {recipe?.title}
+                    </Typography>
+                    <Typography variant="body1" color="text.secondary" gutterBottom>
+                        {recipe?.description}
+                    </Typography>
+                    <Typography variant="h6" component="h2" gutterBottom>
+                        Ingredients
+                    </Typography>
+                    <Typography variant="body1" gutterBottom>
+                        {recipe?.ingredients}
+                    </Typography>
+                    <Typography variant="h6" component="h2" gutterBottom>
+                        Instructions
+                    </Typography>
+                    <Typography variant="body1">
+                        {recipe?.instructions}
+                    </Typography>
+                </CardContent>
+            </Card>
+        </Container>
+    </>)
+}
+export default ShowRecipe;
+import { combineReducers, configureStore } from '@reduxjs/toolkit';
+import recipesSlice from './recipesSlice';
+
+const store = configureStore({
+    reducer: combineReducers({
+        recipes: recipesSlice.reducer
+    })
+});
+export type StoreType = ReturnType<typeof store.getState>
+export type RecipeDispatch=typeof store.dispatch
+export default store;
+import { FormEvent, useContext, useState } from "react";
+import { UserContext, UserType } from "./UserReducer";
+import Form from "./Form";
+import axios, { AxiosError } from "axios";
+import { URL } from "./UserDetails";
+import { Button, Modal } from "@mui/material";
+import EditIcon from '@mui/icons-material/Edit';
+
+const UpdateUser = () => {
+    const { user, userDispatch } = useContext(UserContext);
+    const [open, setOpen] = useState(false);
+
+    const handleSubmit = async (e: FormEvent, user1: UserType) => {
+        e.preventDefault();
+        try {
+            const res = await axios.put(
+                URL, { ...user1 }
+                , { headers: { 'user-id': '' + user.id } })
+
+            userDispatch({
+                type: 'UPDATE_USER',
+                data: res.data
+            })
+            setOpen(false);
+        } catch (error: AxiosError | any) {
+            if (error.response.status === 404) { alert('user not found') }
+            else if (error.response.status === 403) { alert('Unauthorized') }
+        }
+    }
+
+    return (<>
+        <Button sx={{ color: "black", borderColor: "black" }} startIcon={<EditIcon />} variant="outlined" onClick={() => setOpen(true)}>Update</Button>
+        <Modal open={open} onClose={() => setOpen(false)}>
+            <Form handleSubmit={handleSubmit} />
+        </Modal>
+    </>)
+}
+export default UpdateUser;
+import { createContext, Dispatch, useState, useReducer } from "react";
+import UpdateUser from "./UpdateUser";
+import { AppBar, Box, Toolbar } from '@mui/material';
+import { Outlet } from "react-router";
+import NavBar from "./NavBar";
+import userReducer, { UserContext, UserType } from "./UserReducer";
+import MyAvatar from "./Avatar&Name";
+import Login from "./Login";
+import AddRecipe from "./AddRecipe";
+
+export const IsLogin = createContext<[boolean, Dispatch<React.SetStateAction<boolean>>]>([false, () => null]);
+export const URL = 'http://localhost:3000/api/user';
+
+const UserDetails = () => {
+    const [isLogin, setIsLogin] = useState(false);
+    const initialUser: UserType = { id: 0, firstName: '', lastName: '', email: '', password: '', address: '', phone: '' };
+    const [user, userDispatch] = useReducer(userReducer, initialUser);
+
+    return (
+        <IsLogin value={[isLogin, setIsLogin]}>
+            <UserContext value={{ user, userDispatch }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '200vh' }}>
+                    <AppBar position="fixed" sx={{ backgroundColor: 'rgba(222, 197, 197, 0.52)', boxShadow: 'none', height: "10vh" }}>
+                        <Toolbar disableGutters>
+                            <Box margin={"15px"}>
+                                {(user.firstName === '' && user.lastName === '') ? <MyAvatar nameString={''} /> :
+                                    <MyAvatar nameString={user.firstName + ' ' + user.lastName} />}
+                            </Box>
+                            <Box>
+                                {!isLogin && <Login />}
+                                {isLogin && <UpdateUser /> }
+                                {isLogin && <AddRecipe />}
+                            </Box>
+                            <Box sx={{ position: 'absolute', right: 0 }}>
+                                <NavBar />
+                            </Box>
+                        </Toolbar>
+                    </AppBar>
+                    <Box component="main" sx={{ flexGrow: 1, p: 5, mt: 10 }}>
+                        <Outlet />
+                    </Box>
+                </Box>
+            </UserContext>
+        </IsLogin>
+    );
+}
+
+export default UserDetails;
+import { createContext, Dispatch } from "react"
+
+export type UserType = {
+    id: number,
+    firstName: string,
+    lastName: string,
+    email: string,
+    password: string,
+    address: string,
+    phone: string
+}
+
+export type PartialUserType = {
+    id: number,
+    email: string,
+    password: string
+}
+
+type Action = {
+    type: 'LOGIN_USER',
+    data: PartialUserType
+} | {
+    type: 'UPDATE_USER',
+    data: Partial<UserType>,
+} | {
+    type: 'DELETE_USER' | 'GET_USER' 
+}
+
+export const UserContext = createContext<{
+    user: Partial<UserType>;
+    userDispatch: Dispatch<Action>;
+}>({
+    user: { id: 0, firstName: '', lastName: '', email: '', password: '', address: '', phone: ''},
+    userDispatch: () => null
+})
+
+export default (state: UserType, action: Action): UserType => {
+    switch (action.type) {
+        case 'LOGIN_USER':
+            return { ...state, ...action.data};
+        case 'UPDATE_USER':
+            return { ...state, ...action.data};
+        default:
+            return state;
+    }
+}
